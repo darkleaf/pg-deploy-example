@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -15,5 +15,12 @@
   "bugs": {
     "url": "https://github.com/darkleaf/pg-deploy-example/issues"
   },
-  "homepage": "https://github.com/darkleaf/pg-deploy-example#readme"
+  "homepage": "https://github.com/darkleaf/pg-deploy-example#readme",
+  "dependencies": {
+    "pg-deploy": "github:darkleaf/pg-deploy#4d980a2"
+  },
+  "devDependencies": {
+    "dotenv": "^1.2.0",
+    "mocha": "^2.3.4"
+  }
 }
