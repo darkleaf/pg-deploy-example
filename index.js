@@ -12,6 +12,7 @@ const commonjs = require('rollup-plugin-commonjs');
 const nodeResolve = require('rollup-plugin-node-resolve');
 
 
+const stringReplaceAsync = require('string-replace-async');
 const asyncReplace = pify(require('async-replace'));
 
 function processWithRollup(code) {
@@ -21,28 +22,27 @@ function processWithRollup(code) {
             memory({contents: code}),
             includePaths({paths: ['db_modules']}),
             babel({exclude: 'node_modules/**'}),
-            nodeResolve({jsnext: true}),
-            commonjs({include: 'node_modules/**'})
+            nodeResolve({jsnext: true, main: true}),
+            //commonjs({include: 'node_modules/**'})
         ]
     }).then((bundle) => {
         var result = bundle.generate({
+            useStrict: false,
             format: 'iife',
             exports: 'none',
             banner: 'var ret = (function ret(v) { this.return_value = v }).bind(this);',
-            footer: 'if (this.return_value !== undefined && this.return_value !== null) return this.return_value'
+            footer: 'if (this.return_value !== undefined && this.return_value !== null) { return this.return_value }'
         });
+
         return result.code;
     });
 }
 
 function rollupTransformer(fileContent) {
-    return asyncReplace(fileContent, /\$js\$([\s\S]*?)\$js\$/, (_match, jsCode, _offset, _string, done) => {
-        processWithRollup(jsCode)
-            .then(processed => `$bundledJs$${processed}$bundledJs$`)
-            .then(function(processed) { done(null, processed) },
-                  function(error) { done(error) })
+    return stringReplaceAsync(fileContent, /\$js\$([\s\S]*?)\$js\$/, (_match, jsCode) => {
+        return processWithRollup(jsCode)
+            .then(processed => `$bundledJs$\r\n${processed}\r\n$bundledJs$`)
     })
-        .then(c => {console.log(c); return c});
 }
 
 module.exports = new PgDeploy({

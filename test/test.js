@@ -13,11 +13,12 @@ describe('example', () => {
             .then(() => pgDeploy.createLocalDb())
     });
 
-    before(() => pgDeploy.deploy());
+    before(() => pgDeploy.deploy().catch(err => console.error('You had an error: ', err[0].result.stack)));
 
     it('ok', () => {
         return db
             .func('test_js_func')
             .then(res => console.log(res))
+
     });
 });
