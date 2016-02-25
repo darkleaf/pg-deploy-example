@@ -16,6 +16,8 @@ describe('example', () => {
     before(() => pgDeploy.deploy());
 
     it('ok', () => {
-       
+        return db
+            .func('test_js_func')
+            .then(res => console.log(res))
     });
 });
