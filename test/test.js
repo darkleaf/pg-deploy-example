@@ -13,7 +13,7 @@ describe('example', () => {
             .then(() => pgDeploy.createLocalDb())
     });
 
-    before(() => pgDeploy.deploy().catch(err => console.error('You had an error: ', err[0].result.stack)));
+    before(() => pgDeploy.deploy());
 
     it('ok', () => {
         return db
