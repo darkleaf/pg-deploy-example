@@ -1,7 +1,6 @@
 "use strict";
 
 require('dotenv').load();
-const pify = require('pify');
 
 const PgDeploy = require('pg-deploy');
 const rollup = require('rollup');
@@ -13,7 +12,16 @@ const nodeResolve = require('rollup-plugin-node-resolve');
 
 
 const stringReplaceAsync = require('string-replace-async');
-const asyncReplace = pify(require('async-replace'));
+
+
+const bannerJS = `
+    var process = {env: {NODE_ENV: 'production'} };
+    var ret = (function ret(v) { this.return_value = v }).bind(this);
+`;
+const footerJS = `
+    if (this.return_value !== undefined && this.return_value !== null) { return this.return_value }
+`;
+
 
 function processWithRollup(code) {
     return rollup.rollup({
@@ -23,15 +31,15 @@ function processWithRollup(code) {
             includePaths({paths: ['db_modules']}),
             babel({exclude: 'node_modules/**'}),
             nodeResolve({jsnext: true, main: true}),
-            //commonjs({include: 'node_modules/**'})
+            commonjs({include: 'node_modules/**'})
         ]
     }).then((bundle) => {
         var result = bundle.generate({
             useStrict: false,
             format: 'iife',
             exports: 'none',
-            banner: 'var ret = (function ret(v) { this.return_value = v }).bind(this);',
-            footer: 'if (this.return_value !== undefined && this.return_value !== null) { return this.return_value }'
+            banner: bannerJS,
+            footer: footerJS
         });
 
         return result.code;
