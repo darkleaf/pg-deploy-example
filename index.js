@@ -3,31 +3,21 @@
 require('dotenv').load();
 
 const PgDeploy = require('pg-deploy');
+
 const rollup = require('rollup');
-const memory = require('rollup-plugin-memory');
 const includePaths = require('rollup-plugin-includepaths');
 const babel = require('rollup-plugin-babel');
 const commonjs = require('rollup-plugin-commonjs');
 const nodeResolve = require('rollup-plugin-node-resolve');
 
-
 const stringReplaceAsync = require('string-replace-async');
 
+const nunjucks = require('nunjucks');
 
-const bannerJS = `
-    var process = {env: {NODE_ENV: 'production'} };
-    var ret = (function ret(v) { this.return_value = v }).bind(this);
-`;
-const footerJS = `
-    if (this.return_value !== undefined && this.return_value !== null) { return this.return_value }
-`;
-
-
-function processWithRollup(code) {
+function load(name, path) {
     return rollup.rollup({
-        entry: 'main.js',
+        entry: path,
         plugins: [
-            memory({contents: code}),
             includePaths({paths: ['db_modules']}),
             babel({exclude: 'node_modules/**'}),
             nodeResolve({jsnext: true, main: true}),
@@ -35,27 +25,46 @@ function processWithRollup(code) {
         ]
     }).then((bundle) => {
         var result = bundle.generate({
-            useStrict: false,
             format: 'iife',
-            exports: 'none',
-            banner: bannerJS,
-            footer: footerJS
+            moduleName: name
         });
 
         return result.code;
     });
 }
 
-function rollupTransformer(fileContent) {
-    return stringReplaceAsync(fileContent, /\$js\$([\s\S]*?)\$js\$/, (_match, jsCode) => {
-        return processWithRollup(jsCode)
-            .then(processed => `$bundledJs$\r\n${processed}\r\n$bundledJs$`)
+const nunjucksEnv = new nunjucks.Environment([], { autoescape: false });
+nunjucksEnv.addFilter('loadFrom', (name, path, callback) => {
+    load(name, path)
+        .then(code => callback(null, code))
+        .catch(err => callback(err))
+}, true);
+
+
+
+function templateTransformer(fileContent) {
+    return stringReplaceAsync(fileContent, /\$js_template\$([\s\S]*?)\$js_template\$/, (_match, template) => {
+
+        return new Promise((resolve, reject) => {
+            nunjucksEnv.renderString(template, (err, res) => {
+                if (err) { return reject(err) }
+                resolve(res);
+            })
+        })
+            .then(processed => `$js$\r\n${processed}\r\n$js$`)
+            .then(p => { console.log(p); return p })
+
+
     })
+
+
+
 }
+
 
 module.exports = new PgDeploy({
     connectionString: process.env.DB_CONNECTION,
-    transformations: [rollupTransformer],
+    transformations: [templateTransformer],
     migrations: ['migrations/*.sql'],
     afterScripts: ['api/*.sql']
 });
