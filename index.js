@@ -10,9 +10,20 @@ const babel = require('rollup-plugin-babel');
 const commonjs = require('rollup-plugin-commonjs');
 const nodeResolve = require('rollup-plugin-node-resolve');
 
-const stringReplaceAsync = require('string-replace-async');
-
 const nunjucks = require('nunjucks');
+
+function promisify(fn) {
+    return function() {
+        const args = Array.prototype.slice.call(arguments);
+        return new Promise((resolve, reject) => {
+            args.push((err, res) => {
+                if (err) { return reject(err) }
+                resolve(res);
+            });
+            fn.apply(null, args);
+        })
+    }
+}
 
 function load(name, path) {
     return rollup.rollup({
@@ -40,31 +51,18 @@ nunjucksEnv.addFilter('loadFrom', (name, path, callback) => {
         .catch(err => callback(err))
 }, true);
 
-
-
 function templateTransformer(fileContent) {
-    return stringReplaceAsync(fileContent, /\$js_template\$([\s\S]*?)\$js_template\$/, (_match, template) => {
-
-        return new Promise((resolve, reject) => {
-            nunjucksEnv.renderString(template, (err, res) => {
-                if (err) { return reject(err) }
-                resolve(res);
-            })
-        })
-            .then(processed => `$js$\r\n${processed}\r\n$js$`)
-            .then(p => { console.log(p); return p })
-
-
-    })
-
-
-
+    return promisify(nunjucksEnv.renderString.bind(nunjucksEnv))(fileContent);
 }
 
+function debugTransformer(fileContent) {
+    console.log(fileContent);
+    return Promise.resolve(fileContent);
+}
 
 module.exports = new PgDeploy({
     connectionString: process.env.DB_CONNECTION,
-    transformations: [templateTransformer],
+    transformations: [templateTransformer, debugTransformer],
     migrations: ['migrations/*.sql'],
     afterScripts: ['api/*.sql']
 });

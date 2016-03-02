@@ -26,8 +26,7 @@
     "rollup-plugin-babel": "^2.4.0",
     "rollup-plugin-commonjs": "^2.2.1",
     "rollup-plugin-includepaths": "^0.1.1",
-    "rollup-plugin-node-resolve": "^1.4.0",
-    "string-replace-async": "^1.2.0"
+    "rollup-plugin-node-resolve": "^1.4.0"
   },
   "devDependencies": {
     "mocha": "^2.3.4"
