@@ -24,11 +24,15 @@ describe('example', () => {
 
     it('put and get', () => {
         const id = 1;
-        const data = { some: 'data' };
+        const data = { email: 'email@email.com' };
+        const type = 'user';
 
-        return db.func('put', [id, data])
-            .then(() => db.func('get', [id]))
-            .then(rows => rows[0].get)
-            .then(res => assert.deepEqual(res, data))
+        return db.func('put', [id, type, data])
+            .then(() => db.func('get', [{user: { emailEq: 'email@email.com' }}]))
+            .then(rows => console.log(rows))
+
+            .catch(e => console.log(e))
+            //.then(rows => rows[0].get)
+            //.then(res => assert.deepEqual(res, data))
     });
 });
