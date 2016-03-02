@@ -1,5 +1,5 @@
 CREATE OR REPLACE
-FUNCTION test_js_func() RETURNS text
+FUNCTION test_js_func() RETURNS int
 AS
 $js$
   {{ 'func' | loadFrom('test-js-func') }}

@@ -15,10 +15,20 @@ describe('example', () => {
 
     before(() => pgDeploy.deploy());
 
-    it('ok', () => {
+    it('test_js_func', () => {
         return db
             .func('test_js_func')
-            .then(res => console.log(res))
+            .then(rows => rows[0].test_js_func)
+            .then(res => assert.equal(res, 10))
+    });
 
+    it('put and get', () => {
+        const id = 1;
+        const data = { some: 'data' };
+
+        return db.func('put', [id, data])
+            .then(() => db.func('get', [id]))
+            .then(rows => rows[0].get)
+            .then(res => assert.deepEqual(res, data))
     });
 });

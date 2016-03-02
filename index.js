@@ -62,7 +62,7 @@ function debugTransformer(fileContent) {
 
 module.exports = new PgDeploy({
     connectionString: process.env.DB_CONNECTION,
-    transformations: [templateTransformer, debugTransformer],
+    transformations: [templateTransformer, /* debugTransformer */],
     migrations: ['migrations/*.sql'],
     afterScripts: ['api/*.sql']
 });
