@@ -1,9 +1,10 @@
 "use strict";
 
-const assert = require('assert');
-const pgp = require('pg-promise')();
-const pgDeploy = require('../');
+import assert from 'assert';
+import PgPromise from 'pg-promise';
+import pgDeploy from '../';
 
+const pgp = PgPromise();
 const db = pgp(process.env.DB_CONNECTION);
 
 describe('example', () => {
@@ -29,10 +30,8 @@ describe('example', () => {
 
         return db.func('put', [id, type, data])
             .then(() => db.func('get', [{user: { emailEq: 'email@email.com' }}]))
-            .then(rows => console.log(rows))
-
-            .catch(e => console.log(e))
-            //.then(rows => rows[0].get)
-            //.then(res => assert.deepEqual(res, data))
+            .then(rows => assert.equal(rows.length, 1))
+            .then(() => db.func('get', [{user: { emailEq: 'unknown@email.com' }}]))
+            .then(rows => assert.equal(rows.length, 0))
     });
 });

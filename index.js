@@ -2,25 +2,23 @@
 
 require('dotenv').load();
 
-const PgDeploy = require('pg-deploy');
+import PgDeploy from 'pg-deploy';
 
-const rollup = require('rollup');
-const includePaths = require('rollup-plugin-includepaths');
-const babel = require('rollup-plugin-babel');
-const commonjs = require('rollup-plugin-commonjs');
-const nodeResolve = require('rollup-plugin-node-resolve');
+import rollup from 'rollup';
+import includePaths from 'rollup-plugin-includepaths';
+import babel from 'rollup-plugin-babel';
+import commonjs from 'rollup-plugin-commonjs';
+import nodeResolve from 'rollup-plugin-node-resolve';
 
-const nunjucks = require('nunjucks');
+import nunjucks from 'nunjucks';
 
 function promisify(fn) {
-    return function() {
-        const args = Array.prototype.slice.call(arguments);
+    return (...args) => {
         return new Promise((resolve, reject) => {
-            args.push((err, res) => {
+            fn(...args, (err, res) => {
                 if (err) { return reject(err) }
                 resolve(res);
             });
-            fn.apply(null, args);
         })
     }
 }
@@ -29,12 +27,23 @@ function load(name, path) {
     return rollup.rollup({
         entry: path,
         plugins: [
-            includePaths({paths: ['db_modules']}),
-            babel({exclude: 'node_modules/**'}),
-            nodeResolve({jsnext: true, main: true}),
-            commonjs({include: 'node_modules/**'})
+            includePaths({
+                paths: ['db_modules']
+            }),
+            babel({
+                exclude: 'node_modules/**',
+                presets: ['es2015-rollup'],
+                babelrc: false
+            }),
+            nodeResolve({
+                jsnext: true,
+                main: true
+            }),
+            commonjs({
+                include: 'node_modules/**'
+            })
         ]
-    }).then((bundle) => {
+    }).then(bundle => {
         var result = bundle.generate({
             format: 'iife',
             moduleName: name
@@ -60,7 +69,7 @@ function debugTransformer(fileContent) {
     return Promise.resolve(fileContent);
 }
 
-module.exports = new PgDeploy({
+export default new PgDeploy({
     connectionString: process.env.DB_CONNECTION,
     transformations: [templateTransformer, /* debugTransformer */],
     migrations: ['migrations/*.sql'],
